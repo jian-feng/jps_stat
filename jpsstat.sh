@@ -4,21 +4,21 @@
 #
 # Copyright (c) 2017 Amarjeet Anand
 #
-# Permission is hereby granted, free of charge, to any person obtaining a copy 
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-# copies of the Software, and to permit persons to whom the Software is furnished 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is furnished
 # to do so, subject to the following conditions:
 #
-# The above copyright notice and this permission notice shall be included in all 
+# The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
 #
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS 
-# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR 
-# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
-# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+# COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+# IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 # check if -help parameter is given.
@@ -54,16 +54,16 @@ echo " PID                Name               CurHeap  MaxHeap  CurRAM  MaxRAM  %
 echo "=====  ==============================  =======  =======  ======  ======  ====="
 
 
-declare -A prev_pid_max_heap=()
-declare -A prev_pid_max_ram=()
+declare -a prev_pid_max_heap=()
+declare -a prev_pid_max_ram=()
 
 while true
-do  
+do
 
-    declare -A curr_pid_name=()
-    declare -A curr_pid_max_heap=()
-    declare -A curr_pid_max_ram=()
-    
+    declare -a curr_pid_name=()
+    declare -a curr_pid_max_heap=()
+    declare -a curr_pid_max_ram=()
+
     IFS=$'\n'
     DATA=
     ## check if -l option is given
@@ -79,14 +79,14 @@ do
     then
         DATA=($("jps"))
     fi
-    
+
     # put curser up with # of prev processes
     if (( ${#prev_pid_max_heap[@]} > 0 ));
     then
-        tput cuu $(( ${#prev_pid_max_heap[@]} )) 
+        tput cuu $(( ${#prev_pid_max_heap[@]} ))
     fi
 
-    # for each process line we get in jps 
+    # for each process line we get in jps
     IFS=$' '
     for LINE in "${DATA[@]}"
     do
@@ -94,7 +94,7 @@ do
         # if -l option is given, get the last element of the jar file/class name
         TOKENS[1]=${TOKENS[1]##*[\\ /]}
 
-        # skip the process if its Jps or Jstat itself 
+        # skip the process if its Jps or Jstat itself
         if [ "${TOKENS[1]}" == "Jps" ] || [ "${TOKENS[1]}" == "sun.tools.jps.Jps" ] || [ "${TOKENS[1]}" == "Jstat" ]
         then
             continue
@@ -102,7 +102,7 @@ do
         pid=${TOKENS[0]}
         # insert to associative array
         curr_pid_name["$pid"]=${TOKENS[1]}
-        
+
         # compare current heap with previous to get max_heap
         HEAP_MEMORY=$( (jstat -gc $pid 2>/dev/null || echo "0 0 0 0 0 0 0 0 0") | tail -n 1 | awk '{split($0,a," "); sum=a[3]+a[4]+a[6]+a[8]; print sum/1024}' ) 2>/dev/null
         HEAP_MEMORY=${HEAP_MEMORY%.*}
@@ -111,7 +111,7 @@ do
         else
             curr_pid_max_heap["$pid"]=$HEAP_MEMORY
         fi
-        
+
         # compare current ram with previous to get max_ram
         RAM_MEMORY=$(( ` cut -d' ' -f2 <<<cat /proc/$pid/statm 2>/dev/null || echo "0" ` / 1024 ))
         RAM_MEMORY=${RAM_MEMORY%.*}
@@ -124,15 +124,15 @@ do
         #output for current pid
         cpuuse=$( (ps -p $pid -o %cpu 2>/dev/null || echo "0") | tail -n 1 )
         cpuuse=${cpuuse%.*}
-        printf "%-6s %-30s %8i %8i %7d %7d  %5i\n" $pid ${curr_pid_name["$pid"]:0:30} $HEAP_MEMORY ${curr_pid_max_heap["$pid"]} $RAM_MEMORY ${curr_pid_max_ram["$pid"]} $cpuuse | sort 
+        printf "%-6s %-30s %8i %8i %7d %7d  %5i\n" $pid ${curr_pid_name["$pid"]:0:30} $HEAP_MEMORY ${curr_pid_max_heap["$pid"]} $RAM_MEMORY ${curr_pid_max_ram["$pid"]} $cpuuse | sort
     done
 
-    
+
     # clean stuff of previous iteration
     unset prev_pid_max_heap
-    declare -A prev_pid_max_heap
+    declare -a prev_pid_max_heap
     unset prev_pid_max_ram
-    declare -A prev_pid_max_ram
+    declare -a prev_pid_max_ram
 
     # put all current pid and max_memory into prev_associative_array
     for pid in "${!curr_pid_max_heap[@]}";
@@ -144,6 +144,6 @@ do
     do
         prev_pid_max_ram[$pid]=${curr_pid_max_ram[$pid]}
     done
-    
+
     sleep 0.3
 done
